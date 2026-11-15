@@ -1,6 +1,7 @@
 const SUBMISSION_URL =
   "https://script.google.com/macros/s/AKfycbxv0Oc-AKY67Iuy6uCBLQ3FZCOD7MoZU779gobi1Tuhmd0yKxb72oB31SBUmZE_G4qR/exec";
 const MAX_BOOKS = 5;
+const MAX_TITLE_WORDS = 15;
 
 const state = {
   books: [],
@@ -25,22 +26,57 @@ const elements = {
   booksSection: document.querySelector("#books-section"),
   bookList: document.querySelector("#book-list"),
   submitButton: document.querySelector("#submit-button"),
+  submitHint: document.querySelector("#submit-hint"),
   resetButton: document.querySelector("#reset-button"),
-  submitStatus: document.querySelector("#submit-status"),
   manualForm: document.querySelector("#manual-form"),
   manualTitle: document.querySelector("#manual-title"),
   clearTitle: document.querySelector("#clear-title"),
+  addBookButton: document.querySelector("#add-book-button"),
+  wordCount: document.querySelector("#word-count"),
+  studentError: document.querySelector("#student-error"),
+  addedFlash: document.querySelector("#added-flash"),
+  entryView: document.querySelector("#entry-view"),
+  reviewView: document.querySelector("#review-view"),
+  reviewStudent: document.querySelector("#review-student"),
+  reviewList: document.querySelector("#review-list"),
+  confirmSendButton: document.querySelector("#confirm-send-button"),
+  backButton: document.querySelector("#back-button"),
+  sendError: document.querySelector("#send-error"),
+  doneView: document.querySelector("#done-view"),
+  doneStudent: document.querySelector("#done-student"),
+  doneList: document.querySelector("#done-list"),
 };
 
 elements.scanButton.addEventListener("click", startScanner);
 elements.cancelScanButton.addEventListener("click", stopScanner);
-elements.submitButton.addEventListener("click", submitBookList);
+elements.submitButton.addEventListener("click", showReview);
+elements.confirmSendButton.addEventListener("click", sendTopPicks);
+elements.backButton.addEventListener("click", showEntry);
 elements.resetButton.addEventListener("click", resetForNextStudent);
 elements.manualForm.addEventListener("submit", handleManualEntry);
+elements.manualTitle.addEventListener("input", () => {
+  autoGrow(elements.manualTitle);
+  updateTitleState();
+});
+elements.manualTitle.addEventListener("keydown", (event) => {
+  if (event.key === "Enter") {
+    event.preventDefault();
+    if (!elements.addBookButton.disabled) elements.manualForm.requestSubmit();
+  }
+});
 elements.clearTitle.addEventListener("click", () => {
   elements.manualTitle.value = "";
+  autoGrow(elements.manualTitle);
+  updateTitleState();
   elements.manualTitle.focus();
 });
+elements.lastName.addEventListener("input", () => {
+  elements.lastName.value = elements.lastName.value.toUpperCase();
+});
+elements.studentForm.addEventListener("input", handleStudentChange);
+elements.studentForm.addEventListener("change", handleStudentChange);
+elements.studentForm.addEventListener("focusout", () => showStudentError(true));
+window.addEventListener("resize", () => document.querySelectorAll(".auto-grow").forEach(autoGrow));
 
 function normalizeIsbn(value) {
   return String(value).replace(/[^0-9X]/gi, "").toUpperCase();
@@ -124,7 +160,7 @@ async function startZxingScanner() {
   } catch (error) {
     console.error(error);
     await resetScanner();
-    setStatus("Camera access failed. Check Safari camera permissions or type the ISBN below.", true);
+    setStatus("Camera access failed. Check Safari camera permissions or type the title below.", true);
   }
 }
 
@@ -162,7 +198,7 @@ async function startHtml5Scanner() {
   } catch (error) {
     console.error(error);
     await resetScanner();
-    setStatus("Camera access failed. Check browser camera permissions or type the ISBN below.", true);
+    setStatus("Camera access failed. Check browser camera permissions or type the title below.", true);
   }
 }
 
@@ -230,13 +266,13 @@ async function handleManualEntry(event) {
     setStatus("Five books are already in the list.", true);
     return;
   }
-  if (!elements.manualForm.reportValidity()) {
-    return;
-  }
+  updateTitleState();
+  if (elements.addBookButton.disabled) return;
 
-  const title = elements.manualTitle.value.trim();
+  const title = elements.manualTitle.value.trim().replace(/\s+/g, " ");
   state.books.push({ isbn: "", title, authors: "" });
   elements.manualForm.reset();
+  autoGrow(elements.manualTitle);
   renderBooks();
   setStatus(`Added “${title}”.`);
 }
@@ -259,11 +295,12 @@ async function addBook(isbn) {
   });
 
   renderBooks();
+  flashAdded();
   elements.scanButton.disabled = false;
   setStatus(
     book?.title
       ? `Found “${book.title}”${book.authors ? ` by ${book.authors}` : ""}.`
-      : "No title was found. Type it into the list before opening the form.",
+      : "No title was found. Type it in the list below.",
     !book?.title
   );
 }
@@ -321,14 +358,15 @@ function renderBooks() {
     number.textContent = String(index + 1);
 
     const details = document.createElement("div");
-    const title = document.createElement("input");
-    title.className = "book-title";
-    title.type = "text";
+    const title = document.createElement("textarea");
+    title.className = "book-title auto-grow";
+    title.rows = 1;
     title.value = book.title;
     title.placeholder = "Type book title";
     title.setAttribute("aria-label", `Book ${index + 1} title`);
     title.addEventListener("input", (event) => {
-      state.books[index].title = event.target.value;
+      state.books[index].title = event.target.value.replace(/\n/g, " ");
+      autoGrow(event.target);
       updateSubmitButton();
     });
 
@@ -383,34 +421,132 @@ function renderBooks() {
         : '<span aria-hidden="true">＋</span> Scan another book';
   }
 
+  requestAnimationFrame(() => elements.bookList.querySelectorAll(".auto-grow").forEach(autoGrow));
+  updateTitleState();
   updateSubmitButton();
 }
 
-function updateSubmitButton() {
-  elements.submitButton.disabled =
-    state.books.length === 0 || state.books.some((book) => !book.title.trim());
+function countWords(text) {
+  return text.trim().split(/\s+/).filter(Boolean).length;
 }
 
-async function submitBookList() {
-  if (!elements.studentForm.reportValidity()) {
-    elements.studentForm.scrollIntoView({ behavior: "smooth", block: "start" });
-    return;
-  }
-  if (state.books.length === 0 || state.submitted) return;
+function autoGrow(textarea) {
+  textarea.style.height = "auto";
+  textarea.style.height = `${textarea.scrollHeight}px`;
+}
 
+function updateTitleState() {
+  const text = elements.manualTitle.value;
+  const words = countWords(text);
+  const tooMany = words > MAX_TITLE_WORDS;
+  elements.wordCount.textContent = `${words} / ${MAX_TITLE_WORDS} words`;
+  elements.wordCount.classList.toggle("error", tooMany);
+  elements.addBookButton.disabled =
+    text.trim().length < 3 || tooMany || state.books.length >= MAX_BOOKS;
+}
+
+function flashAdded() {
+  const flash = elements.addedFlash;
+  flash.classList.remove("show");
+  void flash.offsetWidth;
+  flash.classList.add("show");
+}
+
+function studentProblems() {
+  const problems = [];
+  if (elements.firstName.value.trim().length < 2) problems.push("first name");
+  if (!/^\p{L}$/u.test(elements.lastName.value.trim())) problems.push("last name initial");
+  if (!elements.grade.value) problems.push("grade");
+  return problems;
+}
+
+function handleStudentChange() {
+  showStudentError(false);
+  updateSubmitButton();
+}
+
+function showStudentError(onLeave) {
+  const name = elements.firstName.value.trim();
+  const initial = elements.lastName.value.trim();
+  let message = "";
+  if (name && name.length < 2) message = "Name must be at least 2 characters";
+  else if (initial && !/^\p{L}$/u.test(initial)) message = "Last name initial must be a letter";
+  if (onLeave || !message) elements.studentError.textContent = message;
+}
+
+function joinList(items) {
+  return items.length < 2 ? items.join("") : `${items.slice(0, -1).join(", ")} and ${items.at(-1)}`;
+}
+
+function updateSubmitButton() {
+  const missing = studentProblems();
+  if (state.books.length === 0) missing.push("at least one book");
+  else if (state.books.some((book) => !book.title.trim())) missing.push("a title for every book");
+  elements.submitButton.disabled = missing.length > 0;
+  elements.submitHint.textContent = missing.length ? `To send, add your ${joinList(missing)}.` : "";
+}
+
+function gradeLabel(grade) {
+  return grade === "K" ? "Kindergarten" : `Grade ${grade}`;
+}
+
+function fillSummary(details, list) {
+  details.replaceChildren();
+  [
+    ["Name", `${elements.firstName.value.trim()} ${elements.lastName.value.trim().toUpperCase()}.`],
+    ["Grade", gradeLabel(elements.grade.value)],
+  ].forEach(([label, value]) => {
+    const term = document.createElement("dt");
+    term.textContent = label;
+    const detail = document.createElement("dd");
+    detail.textContent = value;
+    details.append(term, detail);
+  });
+  list.replaceChildren(
+    ...state.books.map((book) => {
+      const item = document.createElement("li");
+      item.textContent = formatBookEntry(book);
+      return item;
+    })
+  );
+}
+
+function showView(view) {
+  elements.entryView.hidden = view !== "entry";
+  elements.reviewView.hidden = view !== "review";
+  elements.doneView.hidden = view !== "done";
+}
+
+async function showReview() {
+  updateSubmitButton();
+  if (elements.submitButton.disabled) return;
+  await stopScanner();
+  fillSummary(elements.reviewStudent, elements.reviewList);
+  elements.sendError.textContent = "";
+  showView("review");
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+
+function showEntry() {
+  showView("entry");
+  elements.booksSection.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+async function sendTopPicks() {
+  if (state.submitted) return;
   const payload = new URLSearchParams({
     firstName: elements.firstName.value.trim(),
-    lastName: elements.lastName.value.trim(),
+    lastName: elements.lastName.value.trim().toUpperCase(),
     grade: elements.grade.value,
   });
   state.books.forEach((book, index) => {
     payload.set(`book${index + 1}`, formatBookEntry(book));
   });
 
-  elements.submitButton.disabled = true;
-  elements.submitButton.textContent = "Saving…";
-  elements.submitStatus.textContent = "";
-  elements.submitStatus.classList.remove("error");
+  elements.confirmSendButton.disabled = true;
+  elements.backButton.disabled = true;
+  elements.confirmSendButton.textContent = "Sending…";
+  elements.sendError.textContent = "";
 
   try {
     await fetch(SUBMISSION_URL, {
@@ -419,17 +555,16 @@ async function submitBookList() {
       body: payload,
     });
     state.submitted = true;
-    elements.submitButton.hidden = true;
-    elements.resetButton.hidden = false;
-    elements.submitStatus.textContent = `Saved for ${elements.firstName.value.trim()} in grade ${
-      elements.grade.value
-    }.`;
+    fillSummary(elements.doneStudent, elements.doneList);
+    showView("done");
+    window.scrollTo({ top: 0, behavior: "smooth" });
   } catch (error) {
     console.error(error);
-    elements.submitButton.disabled = false;
-    elements.submitButton.textContent = "Submit book list";
-    elements.submitStatus.textContent = "The list could not be saved. Check the connection and try again.";
-    elements.submitStatus.classList.add("error");
+    elements.sendError.textContent = "Your top picks could not be sent. Check the internet and try again.";
+  } finally {
+    elements.confirmSendButton.disabled = false;
+    elements.backButton.disabled = false;
+    elements.confirmSendButton.textContent = "Send my top picks";
   }
 }
 
@@ -440,15 +575,13 @@ async function resetForNextStudent() {
   elements.studentForm.reset();
   elements.grade.value = "";
   elements.manualForm.reset();
+  elements.studentError.textContent = "";
+  autoGrow(elements.manualTitle);
   setStatus("");
-  elements.submitButton.hidden = false;
-  elements.submitButton.textContent = "Submit book list";
-  elements.resetButton.hidden = true;
-  elements.submitStatus.textContent = "";
-  elements.submitStatus.classList.remove("error");
   renderBooks();
-  elements.firstName.focus();
+  showView("entry");
   window.scrollTo({ top: 0, behavior: "smooth" });
+  elements.firstName.focus();
 }
 
 function setStatus(message, isError = false) {
@@ -462,6 +595,9 @@ function formatBookEntry(book) {
   if (!title) return "";
   return authors ? `${title} — ${authors}` : title;
 }
+
+renderBooks();
+autoGrow(elements.manualTitle);
 
 window.isbnScanner = {
   normalizeIsbn,

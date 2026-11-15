@@ -3,146 +3,154 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#13291f" />
-    <title>Scan books</title>
+    <meta name="theme-color" content="#f8d7d3" />
+    <title>Top picks</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=17" />
+    <link rel="stylesheet" href="styles.css?v=18" />
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js" defer></script>
-    <script src="app.js?v=17" defer></script>
+    <script src="app.js?v=18" defer></script>
   </head>
   <body>
     <main class="shell">
       <header>
-        <p class="eyebrow">Book intake</p>
-        <h1>Scan up to five books.</h1>
+        <h1>Add up to five top picks</h1>
         <p class="intro">
-          Scan the ISBN barcode on the back of each book or enter its title. Add up to five books, then submit your list.
+          Scan the ISBN barcode on the back of the book or enter its title. Add up to five books, then send your top
+          picks.
         </p>
       </header>
 
-      <form id="student-form" class="student-card">
-        <div class="section-heading">
-          <div>
-            <p class="step">Step 1</p>
-            <h2>Student details</h2>
+      <div id="entry-view">
+        <form id="student-form" class="student-card" novalidate>
+          <h2 class="section-title"><span class="step">Step 1</span> Student details</h2>
+          <div class="student-fields">
+            <label>
+              First Name
+              <input
+                id="first-name"
+                name="firstName"
+                type="text"
+                autocomplete="given-name"
+                minlength="2"
+                maxlength="15"
+                required
+              />
+            </label>
+            <label>
+              Last Name Initial
+              <input
+                id="last-name"
+                name="lastName"
+                type="text"
+                autocomplete="off"
+                autocapitalize="characters"
+                maxlength="1"
+                required
+              />
+            </label>
+            <label>
+              Grade
+              <select id="grade" name="grade" required>
+                <option value="" selected disabled>Select</option>
+                <option value="K">K</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+                <option value="3">3</option>
+                <option value="4">4</option>
+                <option value="5">5</option>
+                <option value="6">6</option>
+                <option value="7">7</option>
+                <option value="8">8</option>
+              </select>
+            </label>
           </div>
-        </div>
-        <div class="student-fields">
-          <label>
-            First Name
-            <input
-              id="first-name"
-              name="firstName"
-              type="text"
-              autocomplete="given-name"
-              minlength="2"
-              maxlength="15"
-              pattern=".{2,15}"
-              title="Enter 2 to 15 characters."
-              required
-            />
-          </label>
-          <label>
-            Last Name Initial
-            <input
-              id="last-name"
-              name="lastName"
-              type="text"
-              autocomplete="off"
-              autocapitalize="characters"
-              maxlength="1"
-              pattern="\p{L}"
-              title="Enter the first letter of the last name."
-              required
-            />
-          </label>
-          <label>
-            Grade
-            <select id="grade" name="grade" required>
-              <option value="" selected disabled>Select</option>
-              <option value="K">K</option>
-              <option value="1">1</option>
-              <option value="2">2</option>
-              <option value="3">3</option>
-              <option value="4">4</option>
-              <option value="5">5</option>
-              <option value="6">6</option>
-              <option value="7">7</option>
-              <option value="8">8</option>
-            </select>
-          </label>
-        </div>
-      </form>
-
-      <section class="scanner-card" aria-labelledby="scanner-heading">
-        <div class="section-heading">
-          <div>
-            <p class="step">Step 2</p>
-            <h2 id="scanner-heading">Add books</h2>
-          </div>
-          <span id="counter" class="counter">0 / 5</span>
-        </div>
-
-        <div id="reader" class="reader" hidden></div>
-        <div id="scanner-placeholder" class="scanner-placeholder">
-          <div class="barcode-mark" aria-hidden="true">
-            <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-          </div>
-          <p>Use the barcode near the ISBN number, usually on the back cover.</p>
-        </div>
-
-        <button id="scan-button" class="button button-primary" type="button">
-          <span aria-hidden="true">▣</span>
-          Scan first book
-        </button>
-        <button id="cancel-scan-button" class="button button-quiet" type="button" hidden>Cancel scan</button>
-
-        <p class="or-divider"><span>or type the title</span></p>
-        <form id="manual-form" class="manual-form">
-          <div class="manual-row">
-            <input
-              id="manual-title"
-              aria-label="Book title"
-              name="title"
-              type="text"
-              autocomplete="off"
-              minlength="2"
-              pattern=".{2,}"
-              title="Enter at least 2 characters."
-              placeholder="Type the book title"
-              required
-            />
-            <button id="clear-title" class="clear-title" type="button" aria-label="Clear title">×</button>
-          </div>
-          <button class="button button-secondary add-book" type="submit">Add book</button>
+          <p id="student-error" class="field-error" role="alert"></p>
         </form>
-        <p id="status" class="status" role="status" aria-live="polite"></p>
-      </section>
 
-      <section id="books-section" class="books-card" aria-labelledby="books-heading" hidden>
-        <div class="section-heading">
-          <div>
-            <p class="step">Step 3</p>
-            <h2 id="books-heading">Review and submit</h2>
+        <section class="scanner-card" aria-labelledby="scanner-heading">
+          <div class="section-heading">
+            <h2 id="scanner-heading" class="section-title"><span class="step">Step 2</span> Add books</h2>
+            <span id="counter" class="counter">0 / 5</span>
           </div>
-        </div>
-        <ol id="book-list" class="book-list"></ol>
-        <button id="submit-button" class="button button-primary" type="button">
-          Submit book list
-        </button>
-        <button id="reset-button" class="button button-secondary reset-button" type="button" hidden>
-          Start another student
-        </button>
-        <p id="submit-status" class="status submit-status" role="status" aria-live="polite"></p>
-        <p class="fine-print">One row will be saved in the selected grade’s sheet.</p>
+
+          <div class="camera-area">
+            <div id="reader" class="reader" hidden></div>
+            <div id="scanner-placeholder" class="scanner-placeholder">
+              <div class="barcode-mark" aria-hidden="true">
+                <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+              </div>
+              <p>Use the barcode near the ISBN number, usually on the back cover.</p>
+            </div>
+            <div id="added-flash" class="added-flash" aria-hidden="true"><span>✓ Added</span></div>
+          </div>
+
+          <button id="scan-button" class="button button-primary" type="button">
+            <span aria-hidden="true">▣</span>
+            Scan first book
+          </button>
+          <button id="cancel-scan-button" class="button button-quiet" type="button" hidden>Cancel scan</button>
+
+          <p class="or-divider"><span>or type the title</span></p>
+          <form id="manual-form" class="manual-form" novalidate>
+            <div class="manual-row">
+              <textarea
+                id="manual-title"
+                class="auto-grow"
+                aria-label="Book title"
+                aria-describedby="word-count"
+                name="title"
+                rows="1"
+                autocomplete="off"
+                placeholder="Type the book title (up to 15 words)"
+              ></textarea>
+              <button id="clear-title" class="clear-title" type="button" aria-label="Clear title">×</button>
+            </div>
+            <p id="word-count" class="word-count" aria-live="polite">0 / 15 words</p>
+            <button id="add-book-button" class="button button-secondary add-book" type="submit" disabled>
+              Add book
+            </button>
+          </form>
+          <p id="status" class="status" role="status" aria-live="polite"></p>
+        </section>
+
+        <section id="books-section" class="books-card" aria-labelledby="books-heading" hidden>
+          <h2 id="books-heading" class="section-title"><span class="step">Step 3</span> Your top picks</h2>
+          <ol id="book-list" class="book-list"></ol>
+          <button id="submit-button" class="button button-primary" type="button" disabled>Send my top picks</button>
+          <p id="submit-hint" class="submit-hint"></p>
+        </section>
+      </div>
+
+      <section id="review-view" class="books-card summary-card" aria-labelledby="review-heading" hidden>
+        <h2 id="review-heading" class="section-title">Is everything right?</h2>
+        <p class="summary-note">Check your name and books. You can’t change them after sending.</p>
+        <dl id="review-student" class="summary-student"></dl>
+        <ol id="review-list" class="summary-list"></ol>
+        <button id="confirm-send-button" class="button button-primary" type="button">Send my top picks</button>
+        <button id="back-button" class="button button-quiet" type="button">Go back and fix</button>
+        <p id="send-error" class="status error" role="alert"></p>
       </section>
 
+      <section id="done-view" class="books-card summary-card done-card" aria-labelledby="done-heading" hidden>
+        <svg class="done-icon" viewBox="0 0 96 96" aria-hidden="true">
+          <rect x="14" y="12" width="68" height="74" rx="10" fill="#f6c453" />
+          <rect x="14" y="12" width="12" height="74" rx="6" fill="#e2a93a" />
+          <circle cx="44" cy="40" r="4.5" fill="#3b2a12" />
+          <circle cx="64" cy="40" r="4.5" fill="#3b2a12" />
+          <path d="M40 55c4 8 24 8 28 0" fill="none" stroke="#3b2a12" stroke-width="5" stroke-linecap="round" />
+        </svg>
+        <h2 id="done-heading" class="done-title">Sent!</h2>
+        <p class="summary-note">All done. Thank you for sharing your top picks.</p>
+        <dl id="done-student" class="summary-student"></dl>
+        <ol id="done-list" class="summary-list"></ol>
+        <button id="reset-button" class="button button-primary" type="button">Start another student</button>
+      </section>
     </main>
   </body>
 </html>

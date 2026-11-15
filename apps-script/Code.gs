@@ -97,6 +97,12 @@ function insertSorted_(sheet, values) {
     }
   }
   sheet.getRange(targetRow, 1, 1, width).setValues([row]);
+  const timestampCol = headers.indexOf("timestamp") + 1;
+  if (timestampCol > 0) {
+    sheet
+      .getRange(2, timestampCol, sheet.getLastRow() - 1, 1)
+      .setNumberFormat("M/d/yyyy HH:mm:ss");
+  }
 }
 
 function headerKey_(header) {
