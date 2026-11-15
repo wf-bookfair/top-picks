@@ -82,6 +82,20 @@ function doPost(event) {
   }
 }
 
+function resetAllGradeSheets() {
+  Object.values(GRADE_SPREADSHEET_IDS).forEach((id) => {
+    const spreadsheet = SpreadsheetApp.openById(id);
+    spreadsheet.setSpreadsheetTimeZone(TIME_ZONE);
+    const sheet = spreadsheet.getSheets()[0];
+    sheet.clear();
+    if (sheet.getMaxColumns() > HEADERS.length) {
+      sheet.deleteColumns(HEADERS.length + 1, sheet.getMaxColumns() - HEADERS.length);
+    }
+    prepareSheet_(sheet);
+    sheet.getRange(2, HEADERS.length, sheet.getMaxRows() - 1, 1).setNumberFormat("M/d/yyyy HH:mm:ss");
+  });
+}
+
 function ensureDuplicateColumn_(sheet) {
   const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(headerKey_);
   if (headers.includes("duplicate")) return;

@@ -11,24 +11,23 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=19" />
+    <link rel="stylesheet" href="styles.css?v=20" />
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js" defer></script>
-    <script src="app.js?v=19" defer></script>
+    <script src="app.js?v=20" defer></script>
   </head>
   <body>
     <main class="shell">
       <header>
         <h1>Add up to 5 top picks</h1>
         <p id="intro" class="intro">
-          Scan the ISBN barcode on the back of each book or enter its title, up to five books, then send your top
+          Scan the ISBN barcode on the back of each book or enter its title, up to 5 books, then send your top
           picks.
         </p>
       </header>
 
-      <div id="entry-view">
+      <div id="details-view">
         <form id="student-form" class="student-card" novalidate>
-          <h2 class="section-title"><span class="step">Step 1</span> Student details</h2>
           <div class="student-fields">
             <label>
               First Name
@@ -71,30 +70,30 @@
             </label>
           </div>
           <p id="student-error" class="field-error" role="alert"></p>
+          <button id="next-button" class="button button-primary next-button" type="submit" disabled>Next</button>
         </form>
+      </div>
+
+      <div id="add-view" hidden>
+        <button id="details-back" class="back-link" type="button">‹ Change name or grade</button>
 
         <section class="scanner-card" aria-labelledby="scanner-heading">
           <div class="section-heading">
-            <h2 id="scanner-heading" class="section-title"><span class="step">Step 2</span> Add books</h2>
+            <h2 id="scanner-heading" class="section-title">Add books</h2>
             <span id="counter" class="counter">0 / 5</span>
           </div>
 
           <div class="camera-area">
             <div id="reader" class="reader" hidden></div>
             <div id="scan-guide" class="scan-guide" aria-hidden="true" hidden></div>
-            <div id="scanner-placeholder" class="scanner-placeholder">
-              <div class="barcode-mark" aria-hidden="true">
-                <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
-              </div>
-              <p>Use the barcode on the back cover</p>
-            </div>
+            <button id="scanner-placeholder" class="scanner-placeholder" type="button" aria-label="Tap to scan a barcode">
+              <span class="scan-hint">Use the barcode on the back cover</span>
+              <span class="barcode-mark" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span>
+            </button>
             <div id="added-flash" class="added-flash" aria-hidden="true"><span>✓ Added</span></div>
           </div>
 
-          <button id="scan-button" class="button button-primary" type="button">
-            <span aria-hidden="true">▣</span>
-            Scan first book
-          </button>
+          <button id="scan-button" class="tap-to-scan" type="button">Tap to scan</button>
           <button id="cancel-scan-button" class="button button-quiet" type="button" hidden>Cancel scan</button>
 
           <p class="or-divider"><span>or type the title</span></p>
@@ -121,13 +120,11 @@
         </section>
 
         <section id="books-section" class="books-card" aria-labelledby="books-heading" hidden>
-          <h2 id="books-heading" class="section-title"><span class="step">Step 3</span> Your top picks</h2>
+          <h2 id="books-heading" class="section-title">Your top picks</h2>
           <ol id="book-list" class="book-list"></ol>
           <button id="submit-button" class="button button-primary" type="button" disabled>Send my top picks</button>
           <p id="submit-hint" class="submit-hint"></p>
         </section>
-
-        <button id="station-reset" class="station-reset" type="button">↻ Clear for next student</button>
       </div>
 
       <section id="review-view" class="books-card summary-card" aria-labelledby="review-heading" hidden>
@@ -152,8 +149,8 @@
         <p class="summary-note">All done. Thank you for sharing your top picks.</p>
         <dl id="done-student" class="summary-student"></dl>
         <ol id="done-list" class="summary-list"></ol>
-        <button id="reset-button" class="button button-primary" type="button">Start another student</button>
       </section>
+      <button id="station-reset" class="station-reset" type="button" hidden>↻ Clear for next student</button>
     </main>
   </body>
 </html>

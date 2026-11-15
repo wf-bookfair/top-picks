@@ -421,28 +421,17 @@ h1 {
   position: absolute;
   top: 50%;
   left: 50%;
-  width: 78%;
-  height: 42%;
+  width: 82%;
+  height: 34%;
   transform: translate(-50%, -50%);
   border: 3px solid #ff3b30;
   border-radius: 0.6rem;
-  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.18);
   pointer-events: none;
-}
-
-.scan-guide::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  right: 6%;
-  left: 6%;
-  height: 2px;
-  background: rgba(255, 59, 48, 0.85);
 }
 
 .station-reset {
   display: block;
-  margin: 1.5rem auto 0;
+  margin: 60vh auto 1.5rem;
   padding: 0.4rem 0.6rem;
   border: 0;
   color: #a39d9b;
@@ -565,4 +554,61 @@ h1 {
   .books-card {
     padding: 1.25rem;
   }
+}
+
+.student-card .student-fields {
+  grid-template-columns: 1fr;
+}
+
+.next-button {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+.back-link {
+  margin: 0.25rem 0 0;
+  padding: 0.3rem 0;
+  border: 0;
+  color: #6b625f;
+  background: transparent;
+  font: inherit;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+button.scanner-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+  border: 2px dashed #8fb79a;
+  color: #2f5a3d;
+  background: #e4f0e6;
+  font: inherit;
+  cursor: pointer;
+}
+
+.scan-hint {
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.tap-to-scan {
+  display: block;
+  width: 100%;
+  margin: -0.35rem 0 0.4rem;
+  padding: 0.5rem;
+  border: 0;
+  color: #1e4a2e;
+  background: transparent;
+  font: inherit;
+  font-size: 1.05rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+[hidden] {
+  display: none !important;
 }

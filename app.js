@@ -27,7 +27,10 @@ const elements = {
   bookList: document.querySelector("#book-list"),
   submitButton: document.querySelector("#submit-button"),
   submitHint: document.querySelector("#submit-hint"),
-  resetButton: document.querySelector("#reset-button"),
+  nextButton: document.querySelector("#next-button"),
+  detailsBack: document.querySelector("#details-back"),
+  detailsView: document.querySelector("#details-view"),
+  addView: document.querySelector("#add-view"),
   manualForm: document.querySelector("#manual-form"),
   manualTitle: document.querySelector("#manual-title"),
   clearTitle: document.querySelector("#clear-title"),
@@ -38,7 +41,6 @@ const elements = {
   wordCount: document.querySelector("#word-count"),
   studentError: document.querySelector("#student-error"),
   addedFlash: document.querySelector("#added-flash"),
-  entryView: document.querySelector("#entry-view"),
   reviewView: document.querySelector("#review-view"),
   reviewStudent: document.querySelector("#review-student"),
   reviewList: document.querySelector("#review-list"),
@@ -51,11 +53,17 @@ const elements = {
 };
 
 elements.scanButton.addEventListener("click", startScanner);
+elements.placeholder.addEventListener("click", startScanner);
+elements.studentForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  if (studentProblems().length === 0) showView("add");
+});
+elements.detailsBack.addEventListener("click", () => showView("details"));
+elements.addedFlash.addEventListener("animationend", () => elements.addedFlash.classList.remove("show"));
 elements.cancelScanButton.addEventListener("click", stopScanner);
 elements.submitButton.addEventListener("click", showReview);
 elements.confirmSendButton.addEventListener("click", sendTopPicks);
 elements.backButton.addEventListener("click", showEntry);
-elements.resetButton.addEventListener("click", resetForNextStudent);
 elements.stationReset.addEventListener("click", resetForNextStudent);
 elements.manualForm.addEventListener("submit", handleManualEntry);
 elements.manualTitle.addEventListener("input", () => {
@@ -280,6 +288,7 @@ async function handleManualEntry(event) {
   elements.manualForm.reset();
   autoGrow(elements.manualTitle);
   renderBooks();
+  if (state.books.length >= MAX_BOOKS) showReview();
   setStatus(`Added “${title}”.`);
 }
 
@@ -302,6 +311,7 @@ async function addBook(isbn) {
 
   renderBooks();
   flashAdded();
+  if (state.books.length >= MAX_BOOKS) setTimeout(showReview, 900);
   elements.scanButton.disabled = false;
   setStatus(
     book?.title
@@ -411,10 +421,6 @@ function renderBooks() {
   } else {
     elements.scanButton.hidden = false;
     elements.placeholder.hidden = state.scanning;
-    elements.scanButton.innerHTML =
-      state.books.length === 0
-        ? '<span aria-hidden="true">▣</span> Scan first book'
-        : '<span aria-hidden="true">＋</span> Scan another book';
   }
 
   requestAnimationFrame(() => elements.bookList.querySelectorAll(".auto-grow").forEach(autoGrow));
@@ -459,6 +465,7 @@ function studentProblems() {
 
 function handleStudentChange() {
   showStudentError(false);
+  elements.nextButton.disabled = studentProblems().length > 0;
   updateSubmitButton();
 }
 
@@ -505,8 +512,11 @@ function fillSummary(details, list) {
 }
 
 function showView(view) {
-  elements.intro.hidden = view !== "entry";
-  elements.entryView.hidden = view !== "entry";
+  elements.intro.hidden = view !== "details" && view !== "add";
+  elements.detailsView.hidden = view !== "details";
+  elements.addView.hidden = view !== "add";
+  elements.stationReset.hidden = view !== "done";
+  window.scrollTo({ top: 0 });
   elements.reviewView.hidden = view !== "review";
   elements.doneView.hidden = view !== "done";
 }
@@ -522,7 +532,7 @@ async function showReview() {
 }
 
 function showEntry() {
-  showView("entry");
+  showView("add");
   elements.booksSection.scrollIntoView({ behavior: "smooth", block: "start" });
 }
 
@@ -573,7 +583,8 @@ async function resetForNextStudent() {
   autoGrow(elements.manualTitle);
   setStatus("");
   renderBooks();
-  showView("entry");
+  elements.nextButton.disabled = true;
+  showView("details");
   window.scrollTo({ top: 0, behavior: "smooth" });
   elements.firstName.focus();
 }
