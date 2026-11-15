@@ -11,17 +11,17 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=20" />
+    <link rel="stylesheet" href="styles.css?v=21" />
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js" defer></script>
-    <script src="app.js?v=20" defer></script>
+    <script src="app.js?v=21" defer></script>
   </head>
   <body>
     <main class="shell">
       <header>
         <h1>Add up to 5 top picks</h1>
         <p id="intro" class="intro">
-          Scan the ISBN barcode on the back of each book or enter its title, up to 5 books, then send your top
+          Scan the ISBN barcode on the back of each book or enter its title, then send your top
           picks.
         </p>
       </header>
@@ -75,7 +75,10 @@
       </div>
 
       <div id="add-view" hidden>
-        <button id="details-back" class="back-link" type="button">‹ Change name or grade</button>
+        <p class="student-chip">
+          <span id="student-chip-text"></span>
+          <button id="details-back" class="change-link" type="button">Change</button>
+        </p>
 
         <section class="scanner-card" aria-labelledby="scanner-heading">
           <div class="section-heading">
@@ -96,6 +99,10 @@
           <button id="scan-button" class="tap-to-scan" type="button">Tap to scan</button>
           <button id="cancel-scan-button" class="button button-quiet" type="button" hidden>Cancel scan</button>
 
+          <p id="limit-note" class="limit-note" hidden>
+            You have 5 books. To add a different one, remove a book from your list below.
+          </p>
+          <div id="manual-entry">
           <p class="or-divider"><span>or type the title</span></p>
           <form id="manual-form" class="manual-form" novalidate>
             <div class="manual-row">
@@ -112,10 +119,12 @@
               <button id="clear-title" class="clear-title" type="button" aria-label="Clear title" hidden>×</button>
             </div>
             <p id="word-count" class="word-count" aria-live="polite">0 / 15 words</p>
+            <p id="title-error" class="field-error" role="alert"></p>
             <button id="add-book-button" class="button button-secondary add-book" type="submit" disabled>
               Add book
             </button>
           </form>
+          </div>
           <p id="status" class="status" role="status" aria-live="polite"></p>
         </section>
 

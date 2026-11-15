@@ -29,6 +29,10 @@ const elements = {
   submitHint: document.querySelector("#submit-hint"),
   nextButton: document.querySelector("#next-button"),
   detailsBack: document.querySelector("#details-back"),
+  studentChipText: document.querySelector("#student-chip-text"),
+  limitNote: document.querySelector("#limit-note"),
+  manualEntry: document.querySelector("#manual-entry"),
+  titleError: document.querySelector("#title-error"),
   detailsView: document.querySelector("#details-view"),
   addView: document.querySelector("#add-view"),
   manualForm: document.querySelector("#manual-form"),
@@ -284,6 +288,10 @@ async function handleManualEntry(event) {
   if (elements.addBookButton.disabled) return;
 
   const title = elements.manualTitle.value.trim().replace(/\s+/g, " ");
+  if (isLikelyGibberish(title)) {
+    elements.titleError.textContent = "That title doesn't look right. Please check it.";
+    return;
+  }
   state.books.push({ isbn: "", title, authors: "" });
   elements.manualForm.reset();
   autoGrow(elements.manualTitle);
@@ -423,9 +431,20 @@ function renderBooks() {
     elements.placeholder.hidden = state.scanning;
   }
 
+  const full = state.books.length >= MAX_BOOKS;
+  elements.limitNote.hidden = !full;
+  elements.manualEntry.hidden = full;
+
   requestAnimationFrame(() => elements.bookList.querySelectorAll(".auto-grow").forEach(autoGrow));
   updateTitleState();
   updateSubmitButton();
+}
+
+function isLikelyGibberish(title) {
+  const text = title.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
+  if (/(\p{L})\1{3,}/u.test(text)) return true;
+  if (/\p{L}/u.test(text) && !/[aeiouy]/.test(text)) return true;
+  return false;
 }
 
 function countWords(text) {
@@ -443,6 +462,7 @@ function updateTitleState() {
   const tooMany = words > MAX_TITLE_WORDS;
   elements.wordCount.textContent = `${words} / ${MAX_TITLE_WORDS} words`;
   elements.clearTitle.hidden = text.length === 0;
+  elements.titleError.textContent = "";
   elements.wordCount.classList.toggle("error", tooMany);
   elements.addBookButton.disabled =
     text.trim().length < 3 || tooMany || state.books.length >= MAX_BOOKS;
@@ -515,6 +535,11 @@ function showView(view) {
   elements.intro.hidden = view !== "details" && view !== "add";
   elements.detailsView.hidden = view !== "details";
   elements.addView.hidden = view !== "add";
+  if (view === "add") {
+    elements.studentChipText.textContent = `${elements.firstName.value.trim()} ${elements.lastName.value
+      .trim()
+      .toUpperCase()} · Grade ${elements.grade.value}`;
+  }
   elements.stationReset.hidden = view !== "done";
   window.scrollTo({ top: 0 });
   elements.reviewView.hidden = view !== "review";

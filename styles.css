@@ -565,11 +565,20 @@ h1 {
   margin-top: 1rem;
 }
 
-.back-link {
+.student-chip {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
   margin: 0.25rem 0 0;
+  font-weight: 700;
+}
+
+.change-link {
   padding: 0.3rem 0;
   border: 0;
-  color: #6b625f;
+  color: #1e4a2e;
+  font-weight: 600;
+  text-decoration: underline;
   background: transparent;
   font: inherit;
   font-size: 0.9rem;
@@ -607,6 +616,15 @@ button.scanner-placeholder {
   font-size: 1.05rem;
   font-weight: 800;
   cursor: pointer;
+}
+
+.limit-note {
+  margin: 0.25rem 0 0.75rem;
+  padding: 0.75rem 0.9rem;
+  border-radius: 0.75rem;
+  color: #6b4a00;
+  background: #fff4d6;
+  font-size: 0.95rem;
 }
 
 [hidden] {
