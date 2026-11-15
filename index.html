@@ -11,17 +11,17 @@
       href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=18" />
+    <link rel="stylesheet" href="styles.css?v=19" />
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
     <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js" defer></script>
-    <script src="app.js?v=18" defer></script>
+    <script src="app.js?v=19" defer></script>
   </head>
   <body>
     <main class="shell">
       <header>
-        <h1>Add up to five top picks</h1>
-        <p class="intro">
-          Scan the ISBN barcode on the back of the book or enter its title. Add up to five books, then send your top
+        <h1>Add up to 5 top picks</h1>
+        <p id="intro" class="intro">
+          Scan the ISBN barcode on the back of each book or enter its title, up to five books, then send your top
           picks.
         </p>
       </header>
@@ -81,11 +81,12 @@
 
           <div class="camera-area">
             <div id="reader" class="reader" hidden></div>
+            <div id="scan-guide" class="scan-guide" aria-hidden="true" hidden></div>
             <div id="scanner-placeholder" class="scanner-placeholder">
               <div class="barcode-mark" aria-hidden="true">
                 <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
               </div>
-              <p>Use the barcode near the ISBN number, usually on the back cover.</p>
+              <p>Use the barcode on the back cover</p>
             </div>
             <div id="added-flash" class="added-flash" aria-hidden="true"><span>✓ Added</span></div>
           </div>
@@ -107,9 +108,9 @@
                 name="title"
                 rows="1"
                 autocomplete="off"
-                placeholder="Type the book title (up to 15 words)"
+                placeholder="Type the book title"
               ></textarea>
-              <button id="clear-title" class="clear-title" type="button" aria-label="Clear title">×</button>
+              <button id="clear-title" class="clear-title" type="button" aria-label="Clear title" hidden>×</button>
             </div>
             <p id="word-count" class="word-count" aria-live="polite">0 / 15 words</p>
             <button id="add-book-button" class="button button-secondary add-book" type="submit" disabled>
@@ -125,6 +126,8 @@
           <button id="submit-button" class="button button-primary" type="button" disabled>Send my top picks</button>
           <p id="submit-hint" class="submit-hint"></p>
         </section>
+
+        <button id="station-reset" class="station-reset" type="button">↻ Clear for next student</button>
       </div>
 
       <section id="review-view" class="books-card summary-card" aria-labelledby="review-heading" hidden>

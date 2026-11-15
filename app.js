@@ -31,6 +31,9 @@ const elements = {
   manualForm: document.querySelector("#manual-form"),
   manualTitle: document.querySelector("#manual-title"),
   clearTitle: document.querySelector("#clear-title"),
+  scanGuide: document.querySelector("#scan-guide"),
+  intro: document.querySelector("#intro"),
+  stationReset: document.querySelector("#station-reset"),
   addBookButton: document.querySelector("#add-book-button"),
   wordCount: document.querySelector("#word-count"),
   studentError: document.querySelector("#student-error"),
@@ -53,6 +56,7 @@ elements.submitButton.addEventListener("click", showReview);
 elements.confirmSendButton.addEventListener("click", sendTopPicks);
 elements.backButton.addEventListener("click", showEntry);
 elements.resetButton.addEventListener("click", resetForNextStudent);
+elements.stationReset.addEventListener("click", resetForNextStudent);
 elements.manualForm.addEventListener("submit", handleManualEntry);
 elements.manualTitle.addEventListener("input", () => {
   autoGrow(elements.manualTitle);
@@ -105,6 +109,7 @@ function isIosDevice() {
 function showScanner() {
   state.scanning = true;
   elements.reader.hidden = false;
+  elements.scanGuide.hidden = false;
   elements.placeholder.hidden = true;
   elements.scanButton.hidden = true;
   elements.cancelScanButton.hidden = false;
@@ -245,6 +250,7 @@ async function resetScanner() {
   state.scanner = null;
   state.scannerKind = null;
   state.scanning = false;
+  elements.scanGuide.hidden = true;
   replaceReader();
   elements.placeholder.hidden = state.books.length >= MAX_BOOKS;
   elements.scanButton.hidden = state.books.length >= MAX_BOOKS;
@@ -280,7 +286,7 @@ async function handleManualEntry(event) {
 async function addBook(isbn) {
   if (state.books.length >= MAX_BOOKS) return;
   if (state.books.some((book) => book.isbn === isbn)) {
-    setStatus("That book is already in the list. Tap Scan another book to continue.", true);
+    setStatus("Already on your list!", true);
     return;
   }
 
@@ -370,17 +376,7 @@ function renderBooks() {
       updateSubmitButton();
     });
 
-    const authors = document.createElement("input");
-    authors.className = "book-author";
-    authors.type = "text";
-    authors.value = book.authors;
-    authors.placeholder = "Type author";
-    authors.setAttribute("aria-label", `Book ${index + 1} author`);
-    authors.addEventListener("input", (event) => {
-      state.books[index].authors = event.target.value;
-    });
-
-    details.append(title, authors);
+    details.append(title);
     if (book.isbn) {
       const isbn = document.createElement("span");
       isbn.className = "book-isbn";
@@ -440,6 +436,7 @@ function updateTitleState() {
   const words = countWords(text);
   const tooMany = words > MAX_TITLE_WORDS;
   elements.wordCount.textContent = `${words} / ${MAX_TITLE_WORDS} words`;
+  elements.clearTitle.hidden = text.length === 0;
   elements.wordCount.classList.toggle("error", tooMany);
   elements.addBookButton.disabled =
     text.trim().length < 3 || tooMany || state.books.length >= MAX_BOOKS;
@@ -486,15 +483,11 @@ function updateSubmitButton() {
   elements.submitHint.textContent = missing.length ? `To send, add your ${joinList(missing)}.` : "";
 }
 
-function gradeLabel(grade) {
-  return grade === "K" ? "Kindergarten" : `Grade ${grade}`;
-}
-
 function fillSummary(details, list) {
   details.replaceChildren();
   [
     ["Name", `${elements.firstName.value.trim()} ${elements.lastName.value.trim().toUpperCase()}.`],
-    ["Grade", gradeLabel(elements.grade.value)],
+    ["Grade", elements.grade.value],
   ].forEach(([label, value]) => {
     const term = document.createElement("dt");
     term.textContent = label;
@@ -512,6 +505,7 @@ function fillSummary(details, list) {
 }
 
 function showView(view) {
+  elements.intro.hidden = view !== "entry";
   elements.entryView.hidden = view !== "entry";
   elements.reviewView.hidden = view !== "review";
   elements.doneView.hidden = view !== "done";

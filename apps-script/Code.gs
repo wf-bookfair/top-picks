@@ -19,6 +19,7 @@ const HEADERS = [
   "Book 3",
   "Book 4",
   "Book 5",
+  "Duplicate",
   "Timestamp",
 ];
 
@@ -81,9 +82,30 @@ function doPost(event) {
   }
 }
 
+function ensureDuplicateColumn_(sheet) {
+  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(headerKey_);
+  if (headers.includes("duplicate")) return;
+  const timestampCol = headers.indexOf("timestamp") + 1;
+  const col = timestampCol > 0 ? timestampCol : headers.length + 1;
+  if (timestampCol > 0) sheet.insertColumnBefore(timestampCol);
+  sheet.getRange(1, col).setValue("Duplicate");
+}
+
 function insertSorted_(sheet, values) {
+  ensureDuplicateColumn_(sheet);
   const width = Math.max(sheet.getLastColumn(), HEADERS.length);
   const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(headerKey_);
+  const firstIndex = headers.indexOf("first name");
+  const lastIndex = headers.indexOf("last name");
+  if (firstIndex >= 0 && lastIndex >= 0 && sheet.getLastRow() > 1) {
+    const existing = sheet.getRange(2, 1, sheet.getLastRow() - 1, width).getValues();
+    const same = existing.some(
+      (row) =>
+        String(row[firstIndex]).trim().toLowerCase() === values["first name"].toLowerCase() &&
+        String(row[lastIndex]).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
+    );
+    values.duplicate = same ? "Maybe Duplicate" : "";
+  }
   const row = headers.map((header) => (header in values ? values[header] : ""));
   const firstCol = headers.indexOf("first name") + 1;
   const lastCol = headers.indexOf("last name") + 1;

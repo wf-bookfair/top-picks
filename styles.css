@@ -417,6 +417,45 @@ h1 {
   margin-bottom: 0.8rem;
 }
 
+.scan-guide {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 78%;
+  height: 42%;
+  transform: translate(-50%, -50%);
+  border: 3px solid #ff3b30;
+  border-radius: 0.6rem;
+  box-shadow: 0 0 0 999px rgba(0, 0, 0, 0.18);
+  pointer-events: none;
+}
+
+.scan-guide::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  right: 6%;
+  left: 6%;
+  height: 2px;
+  background: rgba(255, 59, 48, 0.85);
+}
+
+.station-reset {
+  display: block;
+  margin: 1.5rem auto 0;
+  padding: 0.4rem 0.6rem;
+  border: 0;
+  color: #a39d9b;
+  background: transparent;
+  font-size: 0.78rem;
+  cursor: pointer;
+}
+
+.camera-area {
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
 .camera-area .scanner-placeholder,
 .camera-area .reader {
   margin-bottom: 0;
