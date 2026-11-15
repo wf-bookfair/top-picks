@@ -536,6 +536,7 @@ function showView(view) {
   elements.detailsView.hidden = view !== "details";
   elements.addView.hidden = view !== "add";
   if (view === "add") {
+    requestAnimationFrame(() => document.querySelectorAll("#add-view .auto-grow").forEach(autoGrow));
     elements.studentChipText.textContent = `${elements.firstName.value.trim()} ${elements.lastName.value
       .trim()
       .toUpperCase()} · Grade ${elements.grade.value}`;
