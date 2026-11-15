@@ -37,9 +37,30 @@ const GRADE_SPREADSHEET_IDS = Object.freeze({
   8: "REDACTED_SHEET_ID_8",
 });
 
+const BLOCKED_ROOTS = ["fuck", "shit", "cunt", "bitch", "whore", "slut", "dildo", "porn"];
+const BLOCKED_WORDS = [
+  "ass", "asses", "asshole", "bastard", "cock", "piss", "nigger", "nigga", "faggot", "fag",
+  "retard", "tits", "boobs", "sexy", "wtf", "stfu",
+];
+const LEET = { 0: "o", 1: "i", 3: "e", 4: "a", 5: "s", 7: "t", "@": "a", $: "s", "!": "i" };
+
+function containsBlockedWord(value) {
+  const text = String(value || "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[013457@$!]/g, (c) => LEET[c]);
+  const squashed = text.replace(/[^\p{L}]/gu, "");
+  const deduped = squashed.replace(/(\p{L})\1{2,}/gu, "$1");
+  if (BLOCKED_ROOTS.some((root) => squashed.includes(root) || deduped.includes(root))) return true;
+  return text.split(/[^\p{L}]+/u).some((word) => BLOCKED_WORDS.includes(word));
+}
+const MAX_SENDS_PER_MINUTE = 24;
+
 function doPost(event) {
   try {
     const payload = event?.parameter || {};
+    if (String(payload.website || "").trim()) return jsonResponse_({ ok: true });
     const grade = String(payload.grade || "").trim();
     const values = {
       "first name": cleanCell_(payload.firstName),
@@ -52,9 +73,8 @@ function doPost(event) {
     });
 
     if (
-      values["first name"].length < 2 ||
-      values["first name"].length > 15 ||
-      values["last name"].length !== 1 ||
+      !/^\p{L}{2,15}$/u.test(values["first name"]) ||
+      !/^\p{L}$/u.test(values["last name"]) ||
       !GRADE_TABS[grade]
     ) {
       return jsonResponse_({ ok: false, error: "Missing or invalid student information." });
@@ -63,9 +83,21 @@ function doPost(event) {
       return jsonResponse_({ ok: false, error: "At least one book is required." });
     }
 
+    if (
+      containsBlockedWord(values["first name"]) ||
+      [1, 2, 3, 4, 5].some((number) => containsBlockedWord(values[`book ${number}`]))
+    ) {
+      return jsonResponse_({ ok: false, error: "blocked" });
+    }
+
     const lock = LockService.getScriptLock();
     lock.waitLock(10000);
     try {
+      const cache = CacheService.getScriptCache();
+      const minuteKey = `sends-${Math.floor(Date.now() / 60000)}`;
+      const sends = Number(cache.get(minuteKey) || 0);
+      if (sends >= MAX_SENDS_PER_MINUTE) return jsonResponse_({ ok: false, error: "busy" });
+      cache.put(minuteKey, String(sends + 1), 120);
       const spreadsheet = SpreadsheetApp.openById(GRADE_SPREADSHEET_IDS[grade]);
       if (spreadsheet.getSpreadsheetTimeZone() !== TIME_ZONE) {
         spreadsheet.setSpreadsheetTimeZone(TIME_ZONE);

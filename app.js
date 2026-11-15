@@ -16,6 +16,7 @@ const elements = {
   studentForm: document.querySelector("#student-form"),
   firstName: document.querySelector("#first-name"),
   lastName: document.querySelector("#last-name"),
+  website: document.querySelector("#website"),
   grade: document.querySelector("#grade"),
   reader: document.querySelector("#reader"),
   placeholder: document.querySelector("#scanner-placeholder"),
@@ -86,8 +87,12 @@ elements.clearTitle.addEventListener("click", () => {
   updateTitleState();
   elements.manualTitle.focus();
 });
+elements.firstName.addEventListener("input", () => {
+  const letters = elements.firstName.value.replace(/[^\p{L}]/gu, "");
+  if (letters !== elements.firstName.value) elements.firstName.value = letters;
+});
 elements.lastName.addEventListener("input", () => {
-  elements.lastName.value = elements.lastName.value.toUpperCase();
+  elements.lastName.value = elements.lastName.value.replace(/[^\p{L}]/gu, "").toUpperCase();
 });
 elements.studentForm.addEventListener("input", handleStudentChange);
 elements.studentForm.addEventListener("change", handleStudentChange);
@@ -288,6 +293,10 @@ async function handleManualEntry(event) {
   if (elements.addBookButton.disabled) return;
 
   const title = elements.manualTitle.value.trim().replace(/\s+/g, " ");
+  if (containsBlockedWord(title)) {
+    elements.titleError.textContent = "Please choose a different title.";
+    return;
+  }
   if (isLikelyGibberish(title)) {
     elements.titleError.textContent = "That title doesn't look right. Please check it.";
     return;
@@ -440,6 +449,25 @@ function renderBooks() {
   updateSubmitButton();
 }
 
+const BLOCKED_ROOTS = ["fuck", "shit", "cunt", "bitch", "whore", "slut", "dildo", "porn"];
+const BLOCKED_WORDS = [
+  "ass", "asses", "asshole", "bastard", "cock", "piss", "nigger", "nigga", "faggot", "fag",
+  "retard", "tits", "boobs", "sexy", "wtf", "stfu",
+];
+const LEET = { 0: "o", 1: "i", 3: "e", 4: "a", 5: "s", 7: "t", "@": "a", $: "s", "!": "i" };
+
+function containsBlockedWord(value) {
+  const text = String(value || "")
+    .normalize("NFD")
+    .replace(/\p{M}/gu, "")
+    .toLowerCase()
+    .replace(/[013457@$!]/g, (c) => LEET[c]);
+  const squashed = text.replace(/[^\p{L}]/gu, "");
+  const deduped = squashed.replace(/(\p{L})\1{2,}/gu, "$1");
+  if (BLOCKED_ROOTS.some((root) => squashed.includes(root) || deduped.includes(root))) return true;
+  return text.split(/[^\p{L}]+/u).some((word) => BLOCKED_WORDS.includes(word));
+}
+
 function isLikelyGibberish(title) {
   const text = title.normalize("NFD").replace(/\p{M}/gu, "").toLowerCase();
   if (/(\p{L})\1{3,}/u.test(text)) return true;
@@ -477,7 +505,8 @@ function flashAdded() {
 
 function studentProblems() {
   const problems = [];
-  if (elements.firstName.value.trim().length < 2) problems.push("first name");
+  const name = elements.firstName.value.trim();
+  if (!/^\p{L}{2,15}$/u.test(name) || containsBlockedWord(name)) problems.push("first name");
   if (!/^\p{L}$/u.test(elements.lastName.value.trim())) problems.push("last name initial");
   if (!elements.grade.value) problems.push("grade");
   return problems;
@@ -494,6 +523,8 @@ function showStudentError(onLeave) {
   const initial = elements.lastName.value.trim();
   let message = "";
   if (name && name.length < 2) message = "Name must be at least 2 characters";
+  else if (name && !/^\p{L}+$/u.test(name)) message = "Name can only have letters";
+  else if (name && containsBlockedWord(name)) message = "Please use your real first name";
   else if (initial && !/^\p{L}$/u.test(initial)) message = "Last name initial must be a letter";
   if (onLeave || !message) elements.studentError.textContent = message;
 }
@@ -506,8 +537,13 @@ function updateSubmitButton() {
   const missing = studentProblems();
   if (state.books.length === 0) missing.push("at least one book");
   else if (state.books.some((book) => !book.title.trim())) missing.push("a title for every book");
-  elements.submitButton.disabled = missing.length > 0;
-  elements.submitHint.textContent = missing.length ? `To send, add your ${joinList(missing)}.` : "";
+  const blocked = state.books.some((book) => containsBlockedWord(book.title));
+  elements.submitButton.disabled = missing.length > 0 || blocked;
+  elements.submitHint.textContent = missing.length
+    ? `To send, add your ${joinList(missing)}.`
+    : blocked
+      ? "Please change the title that isn't allowed."
+      : "";
 }
 
 function fillSummary(details, list) {
@@ -568,6 +604,7 @@ async function sendTopPicks() {
     firstName: elements.firstName.value.trim(),
     lastName: elements.lastName.value.trim().toUpperCase(),
     grade: elements.grade.value,
+    website: elements.website.value,
   });
   state.books.forEach((book, index) => {
     payload.set(`book${index + 1}`, formatBookEntry(book));
@@ -579,11 +616,17 @@ async function sendTopPicks() {
   elements.sendError.textContent = "";
 
   try {
-    await fetch(SUBMISSION_URL, {
-      method: "POST",
-      mode: "no-cors",
-      body: payload,
-    });
+    const response = await fetch(SUBMISSION_URL, { method: "POST", body: payload });
+    const result = await response.json();
+    if (!result.ok) {
+      elements.sendError.textContent =
+        result.error === "busy"
+          ? "Lots of students are sending right now. Wait a few seconds and tap Send again."
+          : result.error === "blocked"
+            ? "Something on this list isn't allowed. Go back and fix it."
+            : "Your top picks could not be sent. Please ask a grown-up for help.";
+      return;
+    }
     state.submitted = true;
     fillSummary(elements.doneStudent, elements.doneList);
     showView("done");
