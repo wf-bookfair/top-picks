@@ -22,6 +22,8 @@ const HEADERS = [
   "Timestamp",
 ];
 
+const TIME_ZONE = "America/Los_Angeles";
+
 const GRADE_SPREADSHEET_IDS = Object.freeze({
   K: "REDACTED_SHEET_ID_K",
   1: "REDACTED_SHEET_ID_1",
@@ -64,6 +66,9 @@ function doPost(event) {
     lock.waitLock(10000);
     try {
       const spreadsheet = SpreadsheetApp.openById(GRADE_SPREADSHEET_IDS[grade]);
+      if (spreadsheet.getSpreadsheetTimeZone() !== TIME_ZONE) {
+        spreadsheet.setSpreadsheetTimeZone(TIME_ZONE);
+      }
       insertSorted_(prepareSheet_(spreadsheet.getSheets()[0]), values);
     } finally {
       lock.releaseLock();
