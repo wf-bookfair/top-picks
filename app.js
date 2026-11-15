@@ -40,7 +40,6 @@ const elements = {
   manualTitle: document.querySelector("#manual-title"),
   clearTitle: document.querySelector("#clear-title"),
   scanGuide: document.querySelector("#scan-guide"),
-  intro: document.querySelector("#intro"),
   stationReset: document.querySelector("#station-reset"),
   addBookButton: document.querySelector("#add-book-button"),
   wordCount: document.querySelector("#word-count"),
@@ -568,7 +567,6 @@ function fillSummary(details, list) {
 }
 
 function showView(view) {
-  elements.intro.hidden = view !== "details" && view !== "add";
   elements.detailsView.hidden = view !== "details";
   elements.addView.hidden = view !== "add";
   if (view === "add") {

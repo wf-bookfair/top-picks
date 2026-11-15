@@ -99,9 +99,6 @@ function doPost(event) {
       if (sends >= MAX_SENDS_PER_MINUTE) return jsonResponse_({ ok: false, error: "busy" });
       cache.put(minuteKey, String(sends + 1), 120);
       const spreadsheet = SpreadsheetApp.openById(GRADE_SPREADSHEET_IDS[grade]);
-      if (spreadsheet.getSpreadsheetTimeZone() !== TIME_ZONE) {
-        spreadsheet.setSpreadsheetTimeZone(TIME_ZONE);
-      }
       insertSorted_(prepareSheet_(spreadsheet.getSheets()[0]), values);
     } finally {
       lock.releaseLock();
@@ -128,54 +125,33 @@ function resetAllGradeSheets() {
   });
 }
 
-function ensureDuplicateColumn_(sheet) {
-  const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(headerKey_);
-  if (headers.includes("duplicate")) return;
-  const timestampCol = headers.indexOf("timestamp") + 1;
-  const col = timestampCol > 0 ? timestampCol : headers.length + 1;
-  if (timestampCol > 0) sheet.insertColumnBefore(timestampCol);
-  sheet.getRange(1, col).setValue("Duplicate");
-}
-
 function insertSorted_(sheet, values) {
-  ensureDuplicateColumn_(sheet);
+  const lastRow = sheet.getLastRow();
   const width = Math.max(sheet.getLastColumn(), HEADERS.length);
-  const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(headerKey_);
+  const table = sheet.getRange(1, 1, lastRow, width).getValues();
+  const headers = table[0].map(headerKey_);
+  const data = table.slice(1);
   const firstIndex = headers.indexOf("first name");
   const lastIndex = headers.indexOf("last name");
-  if (firstIndex >= 0 && lastIndex >= 0 && sheet.getLastRow() > 1) {
-    const existing = sheet.getRange(2, 1, sheet.getLastRow() - 1, width).getValues();
-    const same = existing.some(
-      (row) =>
-        String(row[firstIndex]).trim().toLowerCase() === values["first name"].toLowerCase() &&
-        String(row[lastIndex]).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
-    );
-    values.duplicate = same ? "Maybe Duplicate" : "";
-  }
-  const row = headers.map((header) => (header in values ? values[header] : ""));
-  const firstCol = headers.indexOf("first name") + 1;
-  const lastCol = headers.indexOf("last name") + 1;
-  const newKey = sortKey_(values["first name"], values["last name"]);
-
-  let targetRow = sheet.getLastRow() + 1;
-  if (firstCol > 0 && sheet.getLastRow() > 1) {
-    const data = sheet.getRange(2, 1, sheet.getLastRow() - 1, width).getValues();
-    const index = data.findIndex(
-      (existing) =>
-        sortKey_(existing[firstCol - 1], lastCol > 0 ? existing[lastCol - 1] : "").localeCompare(newKey) > 0
-    );
-    if (index >= 0) {
-      targetRow = index + 2;
-      sheet.insertRowBefore(targetRow);
-    }
-  }
-  sheet.getRange(targetRow, 1, 1, width).setValues([row]);
   const timestampCol = headers.indexOf("timestamp") + 1;
-  if (timestampCol > 0) {
-    sheet
-      .getRange(2, timestampCol, sheet.getLastRow() - 1, 1)
-      .setNumberFormat("M/d/yyyy HH:mm:ss");
+
+  values.duplicate = data.some(
+    (row) =>
+      String(row[firstIndex]).trim().toLowerCase() === values["first name"].toLowerCase() &&
+      String(row[lastIndex]).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
+  )
+    ? "Maybe Duplicate"
+    : "";
+
+  const newKey = sortKey_(values["first name"], values["last name"]);
+  const index = data.findIndex((row) => sortKey_(row[firstIndex], row[lastIndex]).localeCompare(newKey) > 0);
+  let targetRow = lastRow + 1;
+  if (index >= 0) {
+    targetRow = index + 2;
+    sheet.insertRowBefore(targetRow);
   }
+  sheet.getRange(targetRow, 1, 1, width).setValues([headers.map((header) => (header in values ? values[header] : ""))]);
+  if (timestampCol > 0) sheet.getRange(targetRow, timestampCol).setNumberFormat("M/d/yyyy HH:mm:ss");
 }
 
 function headerKey_(header) {
