@@ -358,60 +358,6 @@ h2 {
   gap: 0.5rem;
 }
 
-.title-field {
-  position: relative;
-  flex: 1;
-  min-width: 0;
-}
-
-.typing-dots {
-  position: absolute;
-  top: 50%;
-  left: 0.85rem;
-  display: none;
-  gap: 0.3rem;
-  transform: translateY(-50%);
-  pointer-events: none;
-}
-
-.title-field.transcribing .typing-dots {
-  display: flex;
-}
-
-.title-field.transcribing input::placeholder {
-  color: transparent;
-}
-
-.typing-dots i {
-  width: 0.45rem;
-  height: 0.45rem;
-  border-radius: 50%;
-  background: #557064;
-  opacity: 0.25;
-  animation: typing-dot 1.2s infinite;
-}
-
-.typing-dots i:nth-child(2) {
-  animation-delay: 0.2s;
-}
-
-.typing-dots i:nth-child(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes typing-dot {
-  0%,
-  60%,
-  100% {
-    opacity: 0.25;
-    transform: translateY(0);
-  }
-  30% {
-    opacity: 1;
-    transform: translateY(-0.2rem);
-  }
-}
-
 .manual-row input {
   width: 100%;
   min-width: 0;
@@ -426,17 +372,6 @@ h2 {
   border-color: #557064;
 }
 
-.voice-row {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 0.75rem;
-}
-
-.voice-row .button {
-  flex: none;
-  white-space: nowrap;
-}
-
 .clear-title {
   flex: none;
   width: 2.75rem;
@@ -449,63 +384,8 @@ h2 {
   cursor: pointer;
 }
 
-.voice-button {
-  flex: 1;
-  min-width: 0;
-  padding: 0.85rem;
-  border: 1px solid #557064;
-  border-radius: 0.8rem;
-  color: #294438;
-  font: inherit;
-  font-weight: 700;
-  background: #edf4ef;
-  cursor: pointer;
-  touch-action: none;
-  user-select: none;
-}
-
-.voice-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-}
-
-.mic-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  flex: none;
-  fill: none;
-  stroke: currentColor;
-  stroke-width: 2;
-  stroke-linecap: round;
-  stroke-linejoin: round;
-}
-
-.voice-button.recording {
-  color: #fff;
-  background: #9b3838;
-  border-color: #9b3838;
-}
-
-.voice-button:disabled {
-  cursor: wait;
-  opacity: 0.7;
-}
-
-.voice-status {
-  min-height: 1.3em;
-  margin: 0.55rem 0 0;
-  color: #53625a;
-  font-size: 0.8rem;
-}
-
-.voice-status:empty {
-  display: none;
-}
-
-.voice-status.error {
-  color: #9b3838;
+.add-book {
+  margin-top: 0.75rem;
 }
 
 @media (min-width: 36rem) {

@@ -50,6 +50,7 @@ function doPost(event) {
 
     if (
       values["first name"].length < 2 ||
+      values["first name"].length > 15 ||
       values["last name"].length !== 1 ||
       !GRADE_TABS[grade]
     ) {
