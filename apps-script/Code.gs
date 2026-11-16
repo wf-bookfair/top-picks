@@ -53,6 +53,8 @@ function containsBlockedWord(value) {
   return text.split(/[^\p{L}]+/u).some((word) => BLOCKED_WORDS.includes(word));
 }
 const MAX_SENDS_PER_MINUTE = 40;
+const SPIKE_ALERT_AT = 30; // email when this many sends land in one minute
+const DIGEST_MINUTES = 10;
 
 // Lightweight ping so the page can wake the script before a student sends.
 function doGet() {
@@ -98,6 +100,7 @@ function doPost(event) {
       const cache = CacheService.getScriptCache();
       const minuteKey = `sends-${Math.floor(Date.now() / 60000)}`;
       const sends = Number(cache.get(minuteKey) || 0);
+      if (sends + 1 >= SPIKE_ALERT_AT) spikeAlert_(sends + 1, cache);
       if (sends >= MAX_SENDS_PER_MINUTE) return jsonResponse_({ ok: false, error: "busy" });
       cache.put(minuteKey, String(sends + 1), 120);
       const spreadsheet = SpreadsheetApp.openById(getGradeSpreadsheetIds_()[grade]);
@@ -194,4 +197,78 @@ function jsonResponse_(payload) {
   return ContentService.createTextOutput(JSON.stringify(payload)).setMimeType(
     ContentService.MimeType.JSON
   );
+}
+
+// ---------- Email alerts (no student names are ever included) ----------
+
+function ownerEmail_() {
+  return Session.getEffectiveUser().getEmail();
+}
+
+// At most one spike email per hour. Never lets an email problem break a submission.
+function spikeAlert_(count, cache) {
+  try {
+    if (cache.get("spike-alert-sent")) return;
+    cache.put("spike-alert-sent", "1", 3600);
+    MailApp.sendEmail(
+      ownerEmail_(),
+      "Top Picks: send spike",
+      `${count} submissions arrived within one minute (the limit is ${MAX_SENDS_PER_MINUTE}/min).\n` +
+        "This may just be a rush of families, or it could be someone flooding the form.\n" +
+        "If it looks wrong, check the grade sheets for junk rows."
+    );
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+// Runs every DIGEST_MINUTES minutes from a trigger. Emails only if there were new entries.
+function sendDigest() {
+  const props = PropertiesService.getScriptProperties();
+  const now = Date.now();
+  const since = Number(props.getProperty("DIGEST_LAST") || now - DIGEST_MINUTES * 60000);
+  const ids = getGradeSpreadsheetIds_();
+  const lines = [];
+  let fresh = 0;
+  ["K", "1", "2", "3", "4", "5", "6", "7", "8"].forEach((grade) => {
+    const sheet = SpreadsheetApp.openById(ids[grade]).getSheets()[0];
+    const lastRow = sheet.getLastRow();
+    let count = 0;
+    if (lastRow > 1) {
+      const headers = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0].map(headerKey_);
+      const col = headers.indexOf("timestamp") + 1;
+      if (col > 0) {
+        count = sheet
+          .getRange(2, col, lastRow - 1, 1)
+          .getValues()
+          .filter((row) => row[0] instanceof Date && row[0].getTime() > since && row[0].getTime() <= now).length;
+      }
+    }
+    fresh += count;
+    lines.push(`${GRADE_TABS[grade]}: ${count} new (${Math.max(lastRow - 1, 0)} total)`);
+  });
+  props.setProperty("DIGEST_LAST", String(now));
+  if (!fresh || MailApp.getRemainingDailyQuota() < 5) return;
+  const fmt = (ms) => Utilities.formatDate(new Date(ms), TIME_ZONE, "h:mm a");
+  MailApp.sendEmail(
+    ownerEmail_(),
+    `Top Picks: ${fresh} new since ${fmt(since)}`,
+    `${fresh} new submissions between ${fmt(since)} and ${fmt(now)}.\n\n${lines.join("\n")}`
+  );
+}
+
+// Run this once from the editor (and approve the permissions) to start the digest.
+function installDigest() {
+  ScriptApp.getProjectTriggers()
+    .filter((trigger) => trigger.getHandlerFunction() === "sendDigest")
+    .forEach((trigger) => ScriptApp.deleteTrigger(trigger));
+  ScriptApp.newTrigger("sendDigest").timeBased().everyMinutes(DIGEST_MINUTES).create();
+  PropertiesService.getScriptProperties().setProperty("DIGEST_LAST", String(Date.now()));
+}
+
+// Run this to stop the digest emails.
+function removeDigest() {
+  ScriptApp.getProjectTriggers()
+    .filter((trigger) => trigger.getHandlerFunction() === "sendDigest")
+    .forEach((trigger) => ScriptApp.deleteTrigger(trigger));
 }
