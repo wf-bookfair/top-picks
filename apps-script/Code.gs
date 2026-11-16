@@ -25,17 +25,14 @@ const HEADERS = [
 
 const TIME_ZONE = "America/Los_Angeles";
 
-const GRADE_SPREADSHEET_IDS = Object.freeze({
-  K: "REDACTED_SHEET_ID_K",
-  1: "REDACTED_SHEET_ID_1",
-  2: "REDACTED_SHEET_ID_2",
-  3: "REDACTED_SHEET_ID_3",
-  4: "REDACTED_SHEET_ID_4",
-  5: "REDACTED_SHEET_ID_5",
-  6: "REDACTED_SHEET_ID_6",
-  7: "REDACTED_SHEET_ID_7",
-  8: "REDACTED_SHEET_ID_8",
-});
+// Sheet IDs are NOT stored in this repo. Set a Script Property named
+// GRADE_SPREADSHEET_IDS (Apps Script editor > Project Settings > Script Properties)
+// with JSON like {"K":"<id>","1":"<id>", ... ,"8":"<id>"}.
+function getGradeSpreadsheetIds_() {
+  const raw = PropertiesService.getScriptProperties().getProperty("GRADE_SPREADSHEET_IDS");
+  if (!raw) throw new Error("Script Property GRADE_SPREADSHEET_IDS is not set.");
+  return JSON.parse(raw);
+}
 
 const BLOCKED_ROOTS = ["fuck", "shit", "cunt", "bitch", "whore", "slut", "dildo", "porn"];
 const BLOCKED_WORDS = [
@@ -98,7 +95,7 @@ function doPost(event) {
       const sends = Number(cache.get(minuteKey) || 0);
       if (sends >= MAX_SENDS_PER_MINUTE) return jsonResponse_({ ok: false, error: "busy" });
       cache.put(minuteKey, String(sends + 1), 120);
-      const spreadsheet = SpreadsheetApp.openById(GRADE_SPREADSHEET_IDS[grade]);
+      const spreadsheet = SpreadsheetApp.openById(getGradeSpreadsheetIds_()[grade]);
       insertSorted_(prepareSheet_(spreadsheet.getSheets()[0]), values);
     } finally {
       lock.releaseLock();
@@ -112,7 +109,7 @@ function doPost(event) {
 }
 
 function resetAllGradeSheets() {
-  Object.values(GRADE_SPREADSHEET_IDS).forEach((id) => {
+  Object.values(getGradeSpreadsheetIds_()).forEach((id) => {
     const spreadsheet = SpreadsheetApp.openById(id);
     spreadsheet.setSpreadsheetTimeZone(TIME_ZONE);
     const sheet = spreadsheet.getSheets()[0];

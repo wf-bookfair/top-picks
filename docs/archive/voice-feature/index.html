@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#13291f" />
+    <title>Scan books</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Newsreader:opsz,wght@6..72,600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css?v=15" />
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js" defer></script>
+    <script src="https://unpkg.com/@zxing/browser@0.2.1/umd/zxing-browser.min.js" defer></script>
+    <script src="app.js?v=16" defer></script>
+  </head>
+  <body>
+    <main class="shell">
+      <header>
+        <p class="eyebrow">Book intake</p>
+        <h1>Scan up to five books.</h1>
+        <p class="intro">
+          Scan the ISBN barcode on the back of each book or enter its title. Add up to five books, then submit your list.
+        </p>
+      </header>
+
+      <form id="student-form" class="student-card">
+        <div class="section-heading">
+          <div>
+            <p class="step">Step 1</p>
+            <h2>Student details</h2>
+          </div>
+        </div>
+        <div class="student-fields">
+          <label>
+            First Name
+            <input
+              id="first-name"
+              name="firstName"
+              type="text"
+              autocomplete="given-name"
+              minlength="2"
+              pattern=".{2,}"
+              title="Enter at least 2 characters."
+              required
+            />
+          </label>
+          <label>
+            Last Name Initial
+            <input
+              id="last-name"
+              name="lastName"
+              type="text"
+              autocomplete="off"
+              autocapitalize="characters"
+              maxlength="1"
+              pattern="\p{L}"
+              title="Enter the first letter of the last name."
+              required
+            />
+          </label>
+          <label>
+            Grade
+            <select id="grade" name="grade" required>
+              <option value="" selected disabled>Select</option>
+              <option value="K">K</option>
+              <option value="1">1</option>
+              <option value="2">2</option>
+              <option value="3">3</option>
+              <option value="4">4</option>
+              <option value="5">5</option>
+              <option value="6">6</option>
+              <option value="7">7</option>
+              <option value="8">8</option>
+            </select>
+          </label>
+        </div>
+      </form>
+
+      <section class="scanner-card" aria-labelledby="scanner-heading">
+        <div class="section-heading">
+          <div>
+            <p class="step">Step 2</p>
+            <h2 id="scanner-heading">Add books</h2>
+          </div>
+          <span id="counter" class="counter">0 / 5</span>
+        </div>
+
+        <div id="reader" class="reader" hidden></div>
+        <div id="scanner-placeholder" class="scanner-placeholder">
+          <div class="barcode-mark" aria-hidden="true">
+            <i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+          </div>
+          <p>Use the barcode near the ISBN number, usually on the back cover.</p>
+        </div>
+
+        <button id="scan-button" class="button button-primary" type="button">
+          <span aria-hidden="true">▣</span>
+          Scan first book
+        </button>
+        <button id="cancel-scan-button" class="button button-quiet" type="button" hidden>Cancel scan</button>
+
+        <p class="or-divider"><span>or type or say the title</span></p>
+        <form id="manual-form" class="manual-form">
+          <div class="manual-row">
+            <div id="title-field" class="title-field">
+              <input
+                id="manual-title"
+                aria-label="Book title"
+                name="title"
+                type="text"
+                autocomplete="off"
+                minlength="2"
+                pattern=".{2,}"
+                title="Enter at least 2 characters."
+                placeholder="Type or say the book title"
+                required
+              />
+              <span class="typing-dots" aria-hidden="true"><i></i><i></i><i></i></span>
+            </div>
+            <button id="clear-title" class="clear-title" type="button" aria-label="Clear title">×</button>
+          </div>
+          <div class="voice-row">
+            <button id="voice-button" class="voice-button" type="button">
+              <svg class="mic-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z" />
+                <path d="M19 11a7 7 0 0 1-14 0M12 18v3M8 21h8" />
+              </svg>
+              <span id="voice-label">Hold to say the book title</span>
+            </button>
+            <button class="button button-secondary" type="submit">Add book</button>
+          </div>
+          <p id="voice-status" class="voice-status" role="status" aria-live="polite"></p>
+        </form>
+        <p id="status" class="status" role="status" aria-live="polite"></p>
+      </section>
+
+      <section id="books-section" class="books-card" aria-labelledby="books-heading" hidden>
+        <div class="section-heading">
+          <div>
+            <p class="step">Step 3</p>
+            <h2 id="books-heading">Review and submit</h2>
+          </div>
+        </div>
+        <ol id="book-list" class="book-list"></ol>
+        <button id="submit-button" class="button button-primary" type="button">
+          Submit book list
+        </button>
+        <button id="reset-button" class="button button-secondary reset-button" type="button" hidden>
+          Start another student
+        </button>
+        <p id="submit-status" class="status submit-status" role="status" aria-live="polite"></p>
+        <p class="fine-print">One row will be saved in the selected grade’s sheet.</p>
+      </section>
+
+    </main>
+  </body>
+</html>
