@@ -635,7 +635,7 @@ async function sendTopPicks() {
   } finally {
     elements.confirmSendButton.disabled = false;
     elements.backButton.disabled = false;
-    elements.confirmSendButton.textContent = "Send my top picks";
+    elements.confirmSendButton.textContent = "Yes, Send My Picks!";
   }
 }
 
