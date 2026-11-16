@@ -104,7 +104,7 @@ function doPost(event) {
       if (sends >= MAX_SENDS_PER_MINUTE) return jsonResponse_({ ok: false, error: "busy" });
       cache.put(minuteKey, String(sends + 1), 120);
       const spreadsheet = SpreadsheetApp.openById(getGradeSpreadsheetIds_()[grade]);
-      insertSorted_(prepareSheet_(spreadsheet.getSheets()[0]), values);
+      insertSorted_(spreadsheet.getSheets()[0], values);
     } finally {
       lock.releaseLock();
     }
@@ -130,39 +130,35 @@ function resetAllGradeSheets() {
   });
 }
 
+// Column layout is fixed by HEADERS (First Name, Last Name, ... Timestamp). Do not reorder
+// or insert columns in the grade sheets; this keeps each send to a minimum of Sheets calls.
 function insertSorted_(sheet, values) {
-  const lastRow = sheet.getLastRow();
-  const width = Math.max(sheet.getLastColumn(), HEADERS.length);
-  const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(headerKey_);
-  const firstIndex = headers.indexOf("first name");
-  const lastIndex = headers.indexOf("last name");
-  const timestampCol = headers.indexOf("timestamp") + 1;
-
-  // Only the two name columns are needed for duplicate check and sort position.
-  const left = Math.min(firstIndex, lastIndex);
-  const span = Math.abs(firstIndex - lastIndex) + 1;
-  const names = lastRow > 1 ? sheet.getRange(2, left + 1, lastRow - 1, span).getValues() : [];
-  const first = (row) => row[firstIndex - left];
-  const last = (row) => row[lastIndex - left];
+  let lastRow = sheet.getLastRow();
+  if (lastRow === 0) {
+    prepareSheet_(sheet);
+    lastRow = 1;
+  }
+  const names = lastRow > 1 ? sheet.getRange(2, 1, lastRow - 1, 2).getValues() : [];
 
   values.duplicate = names.some(
     (row) =>
-      String(first(row)).trim().toLowerCase() === values["first name"].toLowerCase() &&
-      String(last(row)).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
+      String(row[0]).trim().toLowerCase() === values["first name"].toLowerCase() &&
+      String(row[1]).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
   )
     ? "Maybe Duplicate"
     : "";
 
   const newKey = sortKey_(values["first name"], values["last name"]);
-  const index = names.findIndex((row) => sortKey_(first(row), last(row)).localeCompare(newKey) > 0);
+  const index = names.findIndex((row) => sortKey_(row[0], row[1]).localeCompare(newKey) > 0);
   let targetRow = lastRow + 1;
   if (index >= 0) {
     targetRow = index + 2;
     sheet.insertRowBefore(targetRow);
   }
-  sheet.getRange(targetRow, 1, 1, width).setValues([headers.map((header) => (header in values ? values[header] : ""))]);
+  const keys = HEADERS.map(headerKey_);
+  sheet.getRange(targetRow, 1, 1, HEADERS.length).setValues([keys.map((key) => (key in values ? values[key] : ""))]);
   // Rows past the end already carry the timestamp format; only inserted rows need it set.
-  if (index >= 0 && timestampCol > 0) sheet.getRange(targetRow, timestampCol).setNumberFormat("M/d/yyyy HH:mm:ss");
+  if (index >= 0) sheet.getRange(targetRow, HEADERS.length).setNumberFormat("M/d/yyyy HH:mm:ss");
 }
 
 function headerKey_(header) {

@@ -675,3 +675,22 @@ button.scanner-placeholder {
 [hidden] {
   display: none !important;
 }
+
+.button.sending::after {
+  content: "";
+  display: inline-block;
+  width: 0.9em;
+  height: 0.9em;
+  margin-left: 0.6em;
+  vertical-align: -0.1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: sending-spin 0.7s linear infinite;
+}
+
+@keyframes sending-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

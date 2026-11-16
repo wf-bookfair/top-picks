@@ -622,6 +622,7 @@ async function sendTopPicks() {
   elements.confirmSendButton.disabled = true;
   elements.backButton.disabled = true;
   elements.confirmSendButton.textContent = "Sending…";
+  elements.confirmSendButton.classList.add("sending");
   elements.sendError.textContent = "";
 
   try {
@@ -647,6 +648,7 @@ async function sendTopPicks() {
     elements.confirmSendButton.disabled = false;
     elements.backButton.disabled = false;
     elements.confirmSendButton.textContent = "Yes, Send My Picks!";
+    elements.confirmSendButton.classList.remove("sending");
   }
 }
 
