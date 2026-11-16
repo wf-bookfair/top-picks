@@ -52,7 +52,12 @@ function containsBlockedWord(value) {
   if (BLOCKED_ROOTS.some((root) => squashed.includes(root) || deduped.includes(root))) return true;
   return text.split(/[^\p{L}]+/u).some((word) => BLOCKED_WORDS.includes(word));
 }
-const MAX_SENDS_PER_MINUTE = 24;
+const MAX_SENDS_PER_MINUTE = 40;
+
+// Lightweight ping so the page can wake the script before a student sends.
+function doGet() {
+  return jsonResponse_({ ok: true });
+}
 
 function doPost(event) {
   try {
@@ -125,30 +130,36 @@ function resetAllGradeSheets() {
 function insertSorted_(sheet, values) {
   const lastRow = sheet.getLastRow();
   const width = Math.max(sheet.getLastColumn(), HEADERS.length);
-  const table = sheet.getRange(1, 1, lastRow, width).getValues();
-  const headers = table[0].map(headerKey_);
-  const data = table.slice(1);
+  const headers = sheet.getRange(1, 1, 1, width).getValues()[0].map(headerKey_);
   const firstIndex = headers.indexOf("first name");
   const lastIndex = headers.indexOf("last name");
   const timestampCol = headers.indexOf("timestamp") + 1;
 
-  values.duplicate = data.some(
+  // Only the two name columns are needed for duplicate check and sort position.
+  const left = Math.min(firstIndex, lastIndex);
+  const span = Math.abs(firstIndex - lastIndex) + 1;
+  const names = lastRow > 1 ? sheet.getRange(2, left + 1, lastRow - 1, span).getValues() : [];
+  const first = (row) => row[firstIndex - left];
+  const last = (row) => row[lastIndex - left];
+
+  values.duplicate = names.some(
     (row) =>
-      String(row[firstIndex]).trim().toLowerCase() === values["first name"].toLowerCase() &&
-      String(row[lastIndex]).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
+      String(first(row)).trim().toLowerCase() === values["first name"].toLowerCase() &&
+      String(last(row)).trim().charAt(0).toLowerCase() === values["last name"].toLowerCase()
   )
     ? "Maybe Duplicate"
     : "";
 
   const newKey = sortKey_(values["first name"], values["last name"]);
-  const index = data.findIndex((row) => sortKey_(row[firstIndex], row[lastIndex]).localeCompare(newKey) > 0);
+  const index = names.findIndex((row) => sortKey_(first(row), last(row)).localeCompare(newKey) > 0);
   let targetRow = lastRow + 1;
   if (index >= 0) {
     targetRow = index + 2;
     sheet.insertRowBefore(targetRow);
   }
   sheet.getRange(targetRow, 1, 1, width).setValues([headers.map((header) => (header in values ? values[header] : ""))]);
-  if (timestampCol > 0) sheet.getRange(targetRow, timestampCol).setNumberFormat("M/d/yyyy HH:mm:ss");
+  // Rows past the end already carry the timestamp format; only inserted rows need it set.
+  if (index >= 0 && timestampCol > 0) sheet.getRange(targetRow, timestampCol).setNumberFormat("M/d/yyyy HH:mm:ss");
 }
 
 function headerKey_(header) {

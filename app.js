@@ -1,6 +1,16 @@
 const SUBMISSION_URL =
   "https://script.google.com/macros/s/AKfycbxv0Oc-AKY67Iuy6uCBLQ3FZCOD7MoZU779gobi1Tuhmd0yKxb72oB31SBUmZE_G4qR/exec";
 const MAX_BOOKS = 5;
+
+// Wake the Apps Script before the student sends so the first send is not a cold start.
+function warmUpSubmission() {
+  try {
+    fetch(SUBMISSION_URL, { mode: "no-cors", keepalive: true }).catch(() => {});
+  } catch (error) {
+    /* best effort only */
+  }
+}
+warmUpSubmission();
 const MAX_TITLE_WORDS = 15;
 
 const state = {
@@ -584,6 +594,7 @@ function showView(view) {
 async function showReview() {
   updateSubmitButton();
   if (elements.submitButton.disabled) return;
+  warmUpSubmission();
   await stopScanner();
   fillSummary(elements.reviewStudent, elements.reviewList);
   elements.sendError.textContent = "";
