@@ -4,9 +4,11 @@ This document records how the press-and-hold voice entry for book titles worked,
 restored or reused later. The feature was removed from the live page to keep the interface simple
 for young children. Typing a title is still supported.
 
-- Last commit that contains the feature: `586c787` ("Move Sheet endpoint to standalone Apps Script project").
+- Last commit that contains the feature: `c644bd4` ("Move Sheet endpoint to standalone Apps Script project").
 - Files involved at that commit: `index.html`, `app.js`, `styles.css`, `voice-worker.js`.
-- Restore everything with `git checkout 586c787 -- index.html app.js styles.css voice-worker.js`,
+- A full copy of those four files is also kept in `docs/archive/voice-feature/` (the Apps Script URL there is a placeholder).
+- The git tag `voice-feature-archive` points at that commit. (History was rewritten once to remove private sheet IDs, so older commit hashes you may have noted elsewhere no longer exist.)
+- Restore everything with `git checkout c644bd4 -- index.html app.js styles.css voice-worker.js`,
   then re-apply any later changes made to those files (for example the 15-character first-name limit).
 
 ## Goals and constraints
@@ -126,7 +128,7 @@ fair's book list, still on the device.
   prompt and the child has to press again.
 - First use on a slow network waits for the 77 MB download; progress shows in the status line.
 
-## Source at commit 586c787
+## Source at commit c644bd4
 
 ### `voice-worker.js`
 
